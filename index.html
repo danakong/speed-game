@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>스피드 워드 게임</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#5D5CDE",
+              secondary: "#FF6B6B",
+            },
+            animation: {
+              "bounce-slow": "bounce 1.5s infinite",
+              "pulse-fast": "pulse 1s infinite",
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      @keyframes countdown {
+        from {
+          width: 100%;
+        }
+        to {
+          width: 0%;
+        }
+      }
+
+      .countdown-animation {
+        animation: countdown linear forwards;
+      }
+
+      .word-appear {
+        animation: appear 0.5s ease-out;
+      }
+
+      @keyframes appear {
+        0% {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .dark .countdown-bar {
+        background-color: #5d5cde;
+      }
+
+      .light .countdown-bar {
+        background-color: #5d5cde;
+      }
+
+      .title-gradient {
+        background: linear-gradient(90deg, #5d5cde, #8a7aff);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        .title-gradient {
+          background: linear-gradient(90deg, #7f7eff, #a59bff);
+        }
+      }
+    </style>
+  </head>
+  <body
+    class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300"
+  >
+    <div class="container mx-auto px-4 py-8 max-w-md">
+      <!-- Main App Container -->
+      <div
+        id="app-container"
+        class="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 transition-all duration-300"
+      >
+        <!-- Welcome Screen -->
+        <div id="welcome-screen" class="flex flex-col items-center text-center">
+          <h1 class="text-3xl font-bold mb-4 title-gradient">SPEED GAME</h1>
+          <p class="text-gray-600 dark:text-gray-300 mb-8">
+            친구들과 함께 즐기는 빠른 단어 맞추기 게임!
+          </p>
+          <button
+            id="start-setup-btn"
+            class="bg-primary text-white font-bold py-3 px-6 rounded-full shadow-lg hover:bg-opacity-90 transition-all transform hover:scale-105"
+          >
+            시작하기
+          </button>
+        </div>
+
+        <!-- Setup Screen -->
+        <div id="setup-screen" class="hidden">
+          <h2
+            class="text-2xl font-bold mb-6 text-center text-gray-800 dark:text-white"
+          >
+            게임 설정
+          </h2>
+
+          <!-- Topic Selection -->
+          <div class="mb-6">
+            <h3
+              class="text-lg font-semibold mb-3 text-gray-700 dark:text-gray-200"
+            >
+              주제 선택
+            </h3>
+            <div class="grid grid-cols-2 gap-3">
+              <button
+                class="topic-btn bg-white dark:bg-gray-700 border-2 border-primary dark:border-primary rounded-lg py-2 px-4 text-gray-800 dark:text-white font-medium hover:bg-primary hover:text-white transition-colors"
+                data-topic="animals"
+              >
+                🐶 동물
+              </button>
+              <button
+                class="topic-btn bg-white dark:bg-gray-700 border-2 border-primary dark:border-primary rounded-lg py-2 px-4 text-gray-800 dark:text-white font-medium hover:bg-primary hover:text-white transition-colors"
+                data-topic="foods"
+              >
+                🍕 음식
+              </button>
+              <button
+                class="topic-btn bg-white dark:bg-gray-700 border-2 border-primary dark:border-primary rounded-lg py-2 px-4 text-gray-800 dark:text-white font-medium hover:bg-primary hover:text-white transition-colors"
+                data-topic="jobs"
+              >
+                👨‍⚕️ 직업
+              </button>
+              <button
+                class="topic-btn bg-white dark:bg-gray-700 border-2 border-primary dark:border-primary rounded-lg py-2 px-4 text-gray-800 dark:text-white font-medium hover:bg-primary hover:text-white transition-colors"
+                data-topic="countries"
+              >
+                🌎 나라
+              </button>
+              <button
+                class="topic-btn bg-white dark:bg-gray-700 border-2 border-primary dark:border-primary rounded-lg py-2 px-4 text-gray-800 dark:text-white font-medium hover:bg-primary hover:text-white transition-colors col-span-2"
+                data-topic="movies"
+              >
+                🎬 동화/영화
+              </button>
+            </div>
+          </div>
+
+          <!-- Time Selection -->
+          <div class="mb-8">
+            <h3
+              class="text-lg font-semibold mb-3 text-gray-700 dark:text-gray-200"
+            >
+              제한 시간 설정
+            </h3>
+            <div class="grid grid-cols-3 gap-3 mb-3">
+              <button
+                class="time-btn bg-white dark:bg-gray-700 border-2 border-primary dark:border-primary rounded-lg py-2 px-4 text-gray-800 dark:text-white font-medium hover:bg-primary hover:text-white transition-colors"
+                data-time="30"
+              >
+                30초
+              </button>
+              <button
+                class="time-btn bg-white dark:bg-gray-700 border-2 border-primary dark:border-primary rounded-lg py-2 px-4 text-gray-800 dark:text-white font-medium hover:bg-primary hover:text-white transition-colors"
+                data-time="60"
+              >
+                60초
+              </button>
+              <button
+                class="time-btn bg-white dark:bg-gray-700 border-2 border-primary dark:border-primary rounded-lg py-2 px-4 text-gray-800 dark:text-white font-medium hover:bg-primary hover:text-white transition-colors"
+                data-time="90"
+              >
+                90초
+              </button>
+            </div>
+            <div class="flex items-center space-x-3">
+              <label
+                class="text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap"
+                >사용자 설정:</label
+              >
+              <input
+                type="number"
+                id="custom-time"
+                min="10"
+                max="300"
+                value="45"
+                class="flex-grow text-base border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg py-2 px-3 focus:outline-none focus:border-primary"
+              />
+              <span
+                class="text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap"
+                >초</span
+              >
+            </div>
+          </div>
+
+          <!-- Sound Options -->
+          <div class="mb-8">
+            <h3
+              class="text-lg font-semibold mb-3 text-gray-700 dark:text-gray-200"
+            >
+              소리 설정
+            </h3>
+            <div class="flex items-center space-x-3">
+              <label class="inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  id="sound-effects"
+                  class="sr-only peer"
+                  checked
+                />
+                <div
+                  class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/30 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary"
+                ></div>
+                <span
+                  class="ms-3 text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >효과음</span
+                >
+              </label>
+              <label class="inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  id="background-music"
+                  class="sr-only peer"
+                  checked
+                />
+                <div
+                  class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/30 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary"
+                ></div>
+                <span
+                  class="ms-3 text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >배경음악</span
+                >
+              </label>
+            </div>
+          </div>
+
+          <!-- Start Button -->
+          <div class="text-center">
+            <button
+              id="start-game-btn"
+              class="bg-primary text-white font-bold py-3 px-8 rounded-full shadow-lg hover:bg-opacity-90 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              disabled
+            >
+              게임 시작!
+            </button>
+          </div>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="game-screen" class="hidden">
+          <!-- Header with score & timer -->
+          <div class="flex justify-between items-center mb-2">
+            <div id="score-display" class="text-lg font-bold text-primary">
+              점수: <span id="current-score">0</span>
+            </div>
+            <div
+              id="time-display"
+              class="text-lg font-bold text-gray-700 dark:text-gray-200"
+            >
+              <span id="time-left">60</span>초
+            </div>
+          </div>
+
+          <!-- Progress Bar -->
+          <div
+            class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mb-6"
+          >
+            <div
+              id="countdown-bar"
+              class="countdown-bar h-2.5 rounded-full"
+              style="width: 100%"
+            ></div>
+          </div>
+
+          <!-- Topic Label -->
+          <div class="text-center mb-2">
+            <span
+              id="current-topic"
+              class="inline-block bg-primary text-white text-sm px-3 py-1 rounded-full"
+            >
+              동물
+            </span>
+          </div>
+
+          <!-- Word Display -->
+          <div class="flex justify-center items-center mb-8">
+            <div
+              id="current-word"
+              class="text-4xl font-bold text-center py-10 text-gray-800 dark:text-white word-appear"
+            >
+              강아지
+            </div>
+          </div>
+
+          <!-- Buttons -->
+          <div class="grid grid-cols-2 gap-4">
+            <button
+              id="pass-btn"
+              class="bg-gray-500 dark:bg-gray-600 text-white text-xl font-bold py-5 rounded-xl shadow-lg hover:bg-opacity-90 transition-all"
+            >
+              ❌ 패스
+            </button>
+            <button
+              id="yes-btn"
+              class="bg-green-500 text-white text-xl font-bold py-5 rounded-xl shadow-lg hover:bg-opacity-90 transition-all"
+            >
+              ✅ 예스
+            </button>
+          </div>
+        </div>
+
+        <!-- Results Screen -->
+        <div id="results-screen" class="hidden text-center">
+          <h2 class="text-2xl font-bold mb-2 text-gray-800 dark:text-white">
+            게임 결과
+          </h2>
+
+          <div class="flex justify-center items-center my-8">
+            <div
+              class="bg-primary bg-opacity-10 dark:bg-opacity-20 rounded-full w-40 h-40 flex flex-col justify-center items-center"
+            >
+              <div class="text-sm text-gray-600 dark:text-gray-300">
+                총 점수
+              </div>
+              <div id="final-score" class="text-5xl font-bold text-primary">
+                0
+              </div>
+            </div>
+          </div>
+
+          <!-- Passed Words Section -->
+          <div id="passed-words-container" class="mb-6">
+            <h3
+              class="text-lg font-semibold mb-3 text-gray-700 dark:text-gray-200"
+            >
+              패스한 단어
+            </h3>
+            <div
+              id="passed-words-list"
+              class="flex flex-wrap justify-center gap-2 text-sm"
+            >
+              <!-- Passed words will be inserted here -->
+            </div>
+          </div>
+
+          <div class="flex flex-col space-y-3">
+            <button
+              id="play-again-btn"
+              class="bg-primary text-white font-bold py-3 px-6 rounded-full shadow-lg hover:bg-opacity-90 transition-all transform hover:scale-105"
+            >
+              다시 하기
+            </button>
+            <button
+              id="new-game-btn"
+              class="bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-2 border-primary font-bold py-3 px-6 rounded-full shadow-lg hover:bg-primary hover:text-white transition-all"
+            >
+              새 게임 설정
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Audio Elements -->
+    <audio
+      id="correct-sound"
+      src="https://cdn.jsdelivr.net/gh/freeCodeCamp/cdn@master/build/testable-projects-fcc/audio/beep.mp3"
+      preload="auto"
+    ></audio>
+    <audio
+      id="wrong-sound"
+      src="https://cdn.jsdelivr.net/gh/freeCodeCamp/cdn@master/build/testable-projects-fcc/audio/fail-sound.mp3"
+      preload="auto"
+    ></audio>
+    <audio
+      id="timeout-sound"
+      src="https://cdn.jsdelivr.net/gh/freeCodeCamp/cdn@master/build/testable-projects-fcc/audio/shrink-ray.mp3"
+      preload="auto"
+    ></audio>
+    <audio
+      id="background-music-audio"
+      src="https://cdn.jsdelivr.net/gh/freeCodeCamp/cdn@master/build/testable-projects-fcc/audio/drum-machine/Heater-1.mp3"
+      preload="auto"
+      loop
+    ></audio>
+
+    <script>
+      // Check dark mode preference
+      if (
+        window.matchMedia &&
+        window.matchMedia("(prefers-color-scheme: dark)").matches
+      ) {
+        document.documentElement.classList.add("dark");
+      }
+      window
+        .matchMedia("(prefers-color-scheme: dark)")
+        .addEventListener("change", (event) => {
+          if (event.matches) {
+            document.documentElement.classList.add("dark");
+          } else {
+            document.documentElement.classList.remove("dark");
+          }
+        });
+
+      // Word banks for each topic
+      const wordBanks = {
+        animals: [
+          "강아지",
+          "고양이",
+          "사자",
+          "호랑이",
+          "코끼리",
+          "원숭이",
+          "펭귄",
+          "기린",
+          "판다",
+          "토끼",
+          "거북이",
+          "뱀",
+          "상어",
+          "고릴라",
+          "쥐",
+          "여우",
+          "곰",
+          "늑대",
+          "말",
+          "독수리",
+          "앵무새",
+          "하마",
+          "개구리",
+          "두더지",
+          "수달",
+          "고래",
+          "참새",
+          "치타",
+          "캥거루",
+          "알파카",
+        ],
+        foods: [
+          "피자",
+          "햄버거",
+          "치킨",
+          "김치",
+          "불고기",
+          "떡볶이",
+          "초밥",
+          "라면",
+          "스파게티",
+          "케이크",
+          "아이스크림",
+          "빵",
+          "샐러드",
+          "김밥",
+          "삼겹살",
+          "팥빙수",
+          "스테이크",
+          "짜장면",
+          "곱창",
+          "짬뽕",
+          "칼국수",
+          "수제비",
+          "우동",
+          "카레",
+          "찌개",
+          "만두",
+          "쌀국수",
+          "샌드위치",
+          "콩국수",
+          "갈비",
+        ],
+        jobs: [
+          "의사",
+          "교사",
+          "변호사",
+          "요리사",
+          "개발자",
+          "경찰",
+          "소방관",
+          "간호사",
+          "군인",
+          "판사",
+          "배우",
+          "가수",
+          "디자이너",
+          "작가",
+          "기자",
+          "택시기사",
+          "운동선수",
+          "정치인",
+          "공무원",
+          "회계사",
+          "학생",
+          "농부",
+          "어부",
+          "건축가",
+          "화가",
+          "사진작가",
+          "사업가",
+          "과학자",
+          "우주비행사",
+          "방송인",
+        ],
+        countries: [
+          "한국",
+          "일본",
+          "중국",
+          "미국",
+          "영국",
+          "프랑스",
+          "독일",
+          "이탈리아",
+          "캐나다",
+          "호주",
+          "러시아",
+          "스페인",
+          "브라질",
+          "멕시코",
+          "인도",
+          "태국",
+          "베트남",
+          "터키",
+          "이집트",
+          "스위스",
+          "스웨덴",
+          "노르웨이",
+          "네덜란드",
+          "벨기에",
+          "그리스",
+          "싱가포르",
+          "뉴질랜드",
+          "남아프리카",
+          "아르헨티나",
+          "칠레",
+        ],
+        movies: [
+          "신데렐라",
+          "백설공주",
+          "인어공주",
+          "라이온킹",
+          "알라딘",
+          "겨울왕국",
+          "토이스토리",
+          "인사이드아웃",
+          "해리포터",
+          "반지의제왕",
+          "아이언맨",
+          "스파이더맨",
+          "어벤져스",
+          "타이타닉",
+          "매트릭스",
+          "스타워즈",
+          "쥬라기공원",
+          "인셉션",
+          "아바타",
+          "터미네이터",
+          "미녀와야수",
+          "셰이프오브워터",
+          "포레스트검프",
+          "굿윌헌팅",
+          "레옹",
+          "기생충",
+          "올드보이",
+          "지킬앤하이드",
+          "녹색마일",
+          "쇼생크탈출",
+        ],
+      };
+
+      // Game state
+      let gameState = {
+        selectedTopic: "",
+        timeLimit: 60,
+        score: 0,
+        timer: null,
+        remainingWords: [],
+        passedWords: [],
+        soundEffects: true,
+        backgroundMusic: true,
+      };
+
+      // DOM Elements
+      const screens = {
+        welcome: document.getElementById("welcome-screen"),
+        setup: document.getElementById("setup-screen"),
+        game: document.getElementById("game-screen"),
+        results: document.getElementById("results-screen"),
+      };
+
+      const elements = {
+        topicButtons: document.querySelectorAll(".topic-btn"),
+        timeButtons: document.querySelectorAll(".time-btn"),
+        customTimeInput: document.getElementById("custom-time"),
+        startGameBtn: document.getElementById("start-game-btn"),
+        currentScore: document.getElementById("current-score"),
+        timeLeft: document.getElementById("time-left"),
+        countdownBar: document.getElementById("countdown-bar"),
+        currentTopic: document.getElementById("current-topic"),
+        currentWord: document.getElementById("current-word"),
+        yesBtn: document.getElementById("yes-btn"),
+        passBtn: document.getElementById("pass-btn"),
+        finalScore: document.getElementById("final-score"),
+        passedWordsList: document.getElementById("passed-words-list"),
+        playAgainBtn: document.getElementById("play-again-btn"),
+        newGameBtn: document.getElementById("new-game-btn"),
+        soundEffectsToggle: document.getElementById("sound-effects"),
+        backgroundMusicToggle: document.getElementById("background-music"),
+      };
+
+      const sounds = {
+        correct: document.getElementById("correct-sound"),
+        wrong: document.getElementById("wrong-sound"),
+        timeout: document.getElementById("timeout-sound"),
+        backgroundMusic: document.getElementById("background-music-audio"),
+      };
+
+      // Event Listeners
+      document
+        .getElementById("start-setup-btn")
+        .addEventListener("click", () => {
+          showScreen("setup");
+        });
+
+      elements.topicButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          // Remove active class from all topic buttons
+          elements.topicButtons.forEach((btn) => {
+            btn.classList.remove("bg-primary", "text-white");
+            btn.classList.add(
+              "bg-white",
+              "dark:bg-gray-700",
+              "text-gray-800",
+              "dark:text-white"
+            );
+          });
+
+          // Add active class to selected button
+          button.classList.remove(
+            "bg-white",
+            "dark:bg-gray-700",
+            "text-gray-800",
+            "dark:text-white"
+          );
+          button.classList.add("bg-primary", "text-white");
+
+          // Update game state
+          gameState.selectedTopic = button.dataset.topic;
+
+          // Check if game can start
+          checkStartConditions();
+        });
+      });
+
+      elements.timeButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          // Remove active class from all time buttons
+          elements.timeButtons.forEach((btn) => {
+            btn.classList.remove("bg-primary", "text-white");
+            btn.classList.add(
+              "bg-white",
+              "dark:bg-gray-700",
+              "text-gray-800",
+              "dark:text-white"
+            );
+          });
+
+          // Add active class to selected button
+          button.classList.remove(
+            "bg-white",
+            "dark:bg-gray-700",
+            "text-gray-800",
+            "dark:text-white"
+          );
+          button.classList.add("bg-primary", "text-white");
+
+          // Update game state
+          gameState.timeLimit = parseInt(button.dataset.time);
+
+          // Check if game can start
+          checkStartConditions();
+        });
+      });
+
+      elements.customTimeInput.addEventListener("input", () => {
+        const customTime = parseInt(elements.customTimeInput.value);
+
+        // Remove active class from all time buttons
+        elements.timeButtons.forEach((btn) => {
+          btn.classList.remove("bg-primary", "text-white");
+          btn.classList.add(
+            "bg-white",
+            "dark:bg-gray-700",
+            "text-gray-800",
+            "dark:text-white"
+          );
+        });
+
+        // Update game state if valid
+        if (customTime >= 10 && customTime <= 300) {
+          gameState.timeLimit = customTime;
+          checkStartConditions();
+        }
+      });
+
+      elements.soundEffectsToggle.addEventListener("change", () => {
+        gameState.soundEffects = elements.soundEffectsToggle.checked;
+      });
+
+      elements.backgroundMusicToggle.addEventListener("change", () => {
+        gameState.backgroundMusic = elements.backgroundMusicToggle.checked;
+      });
+
+      elements.startGameBtn.addEventListener("click", startGame);
+      elements.yesBtn.addEventListener("click", handleYes);
+      elements.passBtn.addEventListener("click", handlePass);
+      elements.playAgainBtn.addEventListener("click", () => {
+        // Reset game with same settings
+        startGame();
+      });
+      elements.newGameBtn.addEventListener("click", () => {
+        showScreen("setup");
+      });
+
+      // Game Functions
+      function checkStartConditions() {
+        // Enable start button if topic and time are selected
+        if (gameState.selectedTopic && gameState.timeLimit) {
+          elements.startGameBtn.disabled = false;
+        } else {
+          elements.startGameBtn.disabled = true;
+        }
+      }
+
+      function showScreen(screenName) {
+        // Hide all screens
+        Object.values(screens).forEach((screen) => {
+          screen.classList.add("hidden");
+        });
+
+        // Show the requested screen
+        screens[screenName].classList.remove("hidden");
+      }
+
+      function startGame() {
+        // Reset game state
+        gameState.score = 0;
+        gameState.passedWords = [];
+
+        // Copy words from selected topic
+        gameState.remainingWords = [...wordBanks[gameState.selectedTopic]];
+
+        // Shuffle the words
+        shuffleArray(gameState.remainingWords);
+
+        // Update UI
+        elements.currentScore.textContent = "0";
+        elements.timeLeft.textContent = gameState.timeLimit;
+        elements.currentTopic.textContent = getTopicName(
+          gameState.selectedTopic
+        );
+
+        // Show game screen
+        showScreen("game");
+
+        // Display first word
+        nextWord();
+
+        // Start countdown
+        startCountdown();
+
+        // Play background music if enabled
+        if (gameState.backgroundMusic) {
+          sounds.backgroundMusic.volume = 0.3;
+          sounds.backgroundMusic
+            .play()
+            .catch((e) =>
+              console.log("Background music could not play automatically")
+            );
+        }
+      }
+
+      function startCountdown() {
+        let timeLeft = gameState.timeLimit;
+
+        // Set countdown bar animation
+        elements.countdownBar.style.animation = `countdown ${timeLeft}s linear forwards`;
+
+        // Update time display
+        elements.timeLeft.textContent = timeLeft;
+
+        // Start timer
+        gameState.timer = setInterval(() => {
+          timeLeft--;
+          elements.timeLeft.textContent = timeLeft;
+
+          // Pulse effect on last 5 seconds
+          if (timeLeft <= 5) {
+            elements.timeLeft.classList.add(
+              "text-red-500",
+              "animate-pulse-fast"
+            );
+          }
+
+          if (timeLeft <= 0) {
+            endGame();
+          }
+        }, 1000);
+      }
+
+      function handleYes() {
+        // Increment score
+        gameState.score++;
+        elements.currentScore.textContent = gameState.score;
+
+        // Play sound if enabled
+        if (gameState.soundEffects) {
+          sounds.correct.currentTime = 0;
+          sounds.correct
+            .play()
+            .catch((e) => console.log("Sound could not play automatically"));
+        }
+
+        // Next word
+        nextWord();
+      }
+
+      function handlePass() {
+        // Add word to passed words list
+        if (
+          gameState.remainingWords.length <
+          wordBanks[gameState.selectedTopic].length
+        ) {
+          const passedWord =
+            wordBanks[gameState.selectedTopic][
+              wordBanks[gameState.selectedTopic].length -
+                gameState.remainingWords.length -
+                1
+            ];
+          gameState.passedWords.push(passedWord);
+        }
+
+        // Play sound if enabled
+        if (gameState.soundEffects) {
+          sounds.wrong.currentTime = 0;
+          sounds.wrong
+            .play()
+            .catch((e) => console.log("Sound could not play automatically"));
+        }
+
+        // Next word
+        nextWord();
+      }
+
+      function nextWord() {
+        if (gameState.remainingWords.length > 0) {
+          // Get next word
+          const word = gameState.remainingWords.pop();
+
+          // Add appear animation
+          elements.currentWord.classList.remove("word-appear");
+          void elements.currentWord.offsetWidth; // Trigger reflow
+          elements.currentWord.classList.add("word-appear");
+
+          // Update display
+          elements.currentWord.textContent = word;
+        } else {
+          // No more words, shuffle and reuse
+          gameState.remainingWords = [...wordBanks[gameState.selectedTopic]];
+          shuffleArray(gameState.remainingWords);
+          nextWord();
+        }
+      }
+
+      function endGame() {
+        // Stop timer
+        clearInterval(gameState.timer);
+
+        // Stop animations
+        elements.countdownBar.style.animation = "none";
+        elements.timeLeft.classList.remove(
+          "text-red-500",
+          "animate-pulse-fast"
+        );
+
+        // Play sound if enabled
+        if (gameState.soundEffects) {
+          sounds.timeout
+            .play()
+            .catch((e) => console.log("Sound could not play automatically"));
+        }
+
+        // Stop background music
+        sounds.backgroundMusic.pause();
+        sounds.backgroundMusic.currentTime = 0;
+
+        // Update results screen
+        elements.finalScore.textContent = gameState.score;
+
+        // Display passed words
+        elements.passedWordsList.innerHTML = "";
+        if (gameState.passedWords.length > 0) {
+          gameState.passedWords.forEach((word) => {
+            const wordEl = document.createElement("span");
+            wordEl.classList.add(
+              "bg-gray-200",
+              "dark:bg-gray-700",
+              "text-gray-800",
+              "dark:text-gray-200",
+              "px-2",
+              "py-1",
+              "rounded-md"
+            );
+            wordEl.textContent = word;
+            elements.passedWordsList.appendChild(wordEl);
+          });
+        } else {
+          const noWordsEl = document.createElement("p");
+          noWordsEl.classList.add(
+            "text-gray-500",
+            "dark:text-gray-400",
+            "italic"
+          );
+          noWordsEl.textContent = "패스한 단어가 없습니다!";
+          elements.passedWordsList.appendChild(noWordsEl);
+        }
+
+        // Show results screen
+        showScreen("results");
+      }
+
+      // Helper Functions
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function getTopicName(topic) {
+        const topicNames = {
+          animals: "🐶 동물",
+          foods: "🍕 음식",
+          jobs: "👨‍⚕️ 직업",
+          countries: "🌎 나라",
+          movies: "🎬 동화/영화",
+        };
+        return topicNames[topic] || topic;
+      }
+    </script>
+  </body>
+</html>
