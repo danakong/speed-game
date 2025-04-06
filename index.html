@@ -23,6 +23,30 @@
       };
     </script>
     <style>
+      @keyframes shake {
+        0%,
+        100% {
+          transform: translateX(0);
+        }
+        25% {
+          transform: translateX(-3px);
+        }
+        50% {
+          transform: translateX(3px);
+        }
+        75% {
+          transform: translateX(-3px);
+        }
+      }
+
+      .shake {
+        animation: shake 0.5s linear infinite;
+      }
+
+      .countdown-bar.danger {
+        background-color: #ef4444 !important; /* red-500 */
+      }
+
       @keyframes countdown {
         from {
           width: 100%;
@@ -33,7 +57,9 @@
       }
 
       .countdown-animation {
-        animation: countdown linear forwards;
+        animation-name: countdown;
+        animation-timing-function: linear;
+        animation-fill-mode: forwards;
       }
 
       .word-appear {
@@ -51,12 +77,8 @@
         }
       }
 
-      .dark .countdown-bar {
-        background-color: #5d5cde;
-      }
-
-      .light .countdown-bar {
-        background-color: #5d5cde;
+      .countdown-bar {
+        background-color: #5d5cde !important;
       }
 
       .title-gradient {
@@ -84,7 +106,9 @@
       >
         <!-- Welcome Screen -->
         <div id="welcome-screen" class="flex flex-col items-center text-center">
-          <h1 class="text-3xl font-bold mb-4 title-gradient">SPEED GAME</h1>
+          <h1 class="text-3xl font-bold mb-4 title-gradient">
+            스피드 워드 게임
+          </h1>
           <p class="text-gray-600 dark:text-gray-300 mb-8">
             친구들과 함께 즐기는 빠른 단어 맞추기 게임!
           </p>
@@ -103,6 +127,21 @@
           >
             게임 설정
           </h2>
+
+          <!-- Player Name Input -->
+          <div class="mb-6">
+            <h3
+              class="text-lg font-semibold mb-3 text-gray-700 dark:text-gray-200"
+            >
+              플레이어 이름
+            </h3>
+            <input
+              type="text"
+              id="player-name"
+              placeholder="이름을 입력하세요"
+              class="w-full text-base border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg py-2 px-3 focus:outline-none focus:border-primary"
+            />
+          </div>
 
           <!-- Topic Selection -->
           <div class="mb-6">
@@ -247,10 +286,31 @@
 
         <!-- Game Screen -->
         <div id="game-screen" class="hidden">
-          <!-- Header with score & timer -->
+          <!-- Header with back button, score & timer -->
           <div class="flex justify-between items-center mb-2">
-            <div id="score-display" class="text-lg font-bold text-primary">
-              점수: <span id="current-score">0</span>
+            <div class="flex items-center">
+              <button
+                id="back-to-setup-btn"
+                class="mr-3 bg-gray-200 dark:bg-gray-700 w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-5 w-5 text-gray-700 dark:text-gray-200"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+              </button>
+              <div id="score-display" class="text-lg font-bold text-primary">
+                점수: <span id="current-score">0</span>
+              </div>
             </div>
             <div
               id="time-display"
@@ -261,9 +321,7 @@
           </div>
 
           <!-- Progress Bar -->
-          <div
-            class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mb-6"
-          >
+          <div class="w-full bg-gray-200 rounded-full h-2.5">
             <div
               id="countdown-bar"
               class="countdown-bar h-2.5 rounded-full"
@@ -314,7 +372,14 @@
             게임 결과
           </h2>
 
-          <div class="flex justify-center items-center my-8">
+          <div
+            id="player-result"
+            class="text-lg font-medium text-gray-700 dark:text-gray-300 mb-4"
+          >
+            <!-- Player name will be displayed here -->
+          </div>
+
+          <div class="flex justify-center items-center my-6">
             <div
               class="bg-primary bg-opacity-10 dark:bg-opacity-20 rounded-full w-40 h-40 flex flex-col justify-center items-center"
             >
@@ -324,6 +389,21 @@
               <div id="final-score" class="text-5xl font-bold text-primary">
                 0
               </div>
+            </div>
+          </div>
+
+          <!-- Leaderboard -->
+          <div id="leaderboard-container" class="mb-6">
+            <h3
+              class="text-lg font-semibold mb-3 text-gray-700 dark:text-gray-200"
+            >
+              🏆 리더보드
+            </h3>
+            <div
+              id="leaderboard"
+              class="mx-auto max-w-xs bg-gray-100 dark:bg-gray-700 rounded-lg p-3 overflow-hidden"
+            >
+              <!-- Leaderboard will be inserted here -->
             </div>
           </div>
 
@@ -575,7 +655,23 @@
         passedWords: [],
         soundEffects: true,
         backgroundMusic: true,
+        playerName: "",
+        isGameActive: false,
       };
+
+      // Leaderboard storage
+      let leaderboard = [];
+
+      // Try to load leaderboard from localStorage
+      try {
+        const savedLeaderboard = sessionStorage.getItem("wordGameLeaderboard");
+        if (savedLeaderboard) {
+          leaderboard = JSON.parse(savedLeaderboard);
+        }
+      } catch (e) {
+        console.log("Error loading leaderboard", e);
+        leaderboard = [];
+      }
 
       // DOM Elements
       const screens = {
@@ -589,6 +685,7 @@
         topicButtons: document.querySelectorAll(".topic-btn"),
         timeButtons: document.querySelectorAll(".time-btn"),
         customTimeInput: document.getElementById("custom-time"),
+        playerNameInput: document.getElementById("player-name"),
         startGameBtn: document.getElementById("start-game-btn"),
         currentScore: document.getElementById("current-score"),
         timeLeft: document.getElementById("time-left"),
@@ -597,7 +694,10 @@
         currentWord: document.getElementById("current-word"),
         yesBtn: document.getElementById("yes-btn"),
         passBtn: document.getElementById("pass-btn"),
+        backToSetupBtn: document.getElementById("back-to-setup-btn"),
         finalScore: document.getElementById("final-score"),
+        playerResult: document.getElementById("player-result"),
+        leaderboardEl: document.getElementById("leaderboard"),
         passedWordsList: document.getElementById("passed-words-list"),
         playAgainBtn: document.getElementById("play-again-btn"),
         newGameBtn: document.getElementById("new-game-btn"),
@@ -682,7 +782,7 @@
       elements.customTimeInput.addEventListener("input", () => {
         const customTime = parseInt(elements.customTimeInput.value);
 
-        // Remove active class from all time buttons
+        // 시간 버튼 비활성화 스타일로 초기화
         elements.timeButtons.forEach((btn) => {
           btn.classList.remove("bg-primary", "text-white");
           btn.classList.add(
@@ -693,12 +793,14 @@
           );
         });
 
-        // Update game state if valid
-        if (customTime >= 10 && customTime <= 300) {
+        // 입력값이 10~300 사이일 때만 반영
+        if (!isNaN(customTime) && customTime >= 10 && customTime <= 300) {
           gameState.timeLimit = customTime;
           checkStartConditions();
         }
       });
+
+      elements.playerNameInput.addEventListener("input", checkStartConditions);
 
       elements.soundEffectsToggle.addEventListener("change", () => {
         gameState.soundEffects = elements.soundEffectsToggle.checked;
@@ -711,18 +813,37 @@
       elements.startGameBtn.addEventListener("click", startGame);
       elements.yesBtn.addEventListener("click", handleYes);
       elements.passBtn.addEventListener("click", handlePass);
+      elements.backToSetupBtn.addEventListener("click", () => {
+        // Confirm before quitting
+        if (gameState.isGameActive) {
+          if (
+            confirm(
+              "정말로 게임을 중단하시겠습니까? 현재 점수는 저장되지 않습니다."
+            )
+          ) {
+            stopGame();
+            showScreen("setup");
+          }
+        } else {
+          showScreen("setup");
+        }
+      });
+
       elements.playAgainBtn.addEventListener("click", () => {
         // Reset game with same settings
         startGame();
       });
+
       elements.newGameBtn.addEventListener("click", () => {
         showScreen("setup");
       });
 
       // Game Functions
       function checkStartConditions() {
-        // Enable start button if topic and time are selected
-        if (gameState.selectedTopic && gameState.timeLimit) {
+        const playerName = elements.playerNameInput.value.trim();
+
+        // Enable start button if topic, time, and player name are set
+        if (gameState.selectedTopic && gameState.timeLimit && playerName) {
           elements.startGameBtn.disabled = false;
         } else {
           elements.startGameBtn.disabled = true;
@@ -740,9 +861,13 @@
       }
 
       function startGame() {
+        // Set player name
+        gameState.playerName = elements.playerNameInput.value.trim();
+
         // Reset game state
         gameState.score = 0;
         gameState.passedWords = [];
+        gameState.isGameActive = true;
 
         // Copy words from selected topic
         gameState.remainingWords = [...wordBanks[gameState.selectedTopic]];
@@ -777,29 +902,61 @@
         }
       }
 
+      function stopGame() {
+        if (gameState.timer) {
+          clearInterval(gameState.timer);
+          gameState.timer = null;
+        }
+
+        // 타이머 바 초기화
+        elements.countdownBar.style.animation = "none";
+        elements.countdownBar.style.width = "100%";
+
+        // 사운드 멈추기
+        sounds.backgroundMusic.pause();
+        sounds.backgroundMusic.currentTime = 0;
+
+        gameState.isGameActive = false;
+      }
+
       function startCountdown() {
         let timeLeft = gameState.timeLimit;
+        const bar = elements.countdownBar;
 
-        // Set countdown bar animation
-        elements.countdownBar.style.animation = `countdown ${timeLeft}s linear forwards`;
+        // 초기화
+        bar.style.animation = "none";
+        bar.offsetHeight; // reflow
+        bar.style.width = "100%";
+        bar.style.animation = `countdown ${timeLeft}s linear forwards`;
 
-        // Update time display
+        // 초기 상태 정리
+        bar.classList.remove("danger", "shake");
+        elements.timeLeft.classList.remove(
+          "text-red-500",
+          "animate-pulse-fast"
+        );
+
         elements.timeLeft.textContent = timeLeft;
 
-        // Start timer
         gameState.timer = setInterval(() => {
           timeLeft--;
           elements.timeLeft.textContent = timeLeft;
 
-          // Pulse effect on last 5 seconds
-          if (timeLeft <= 5) {
+          // 5초 이하일 때 효과 적용
+          if (timeLeft === 5) {
             elements.timeLeft.classList.add(
               "text-red-500",
               "animate-pulse-fast"
             );
+            bar.classList.add("danger", "shake");
+
+            if (navigator.vibrate) {
+              navigator.vibrate(200); // 진동 200ms
+            }
           }
 
           if (timeLeft <= 0) {
+            clearInterval(gameState.timer);
             endGame();
           }
         }, 1000);
@@ -870,11 +1027,13 @@
       }
 
       function endGame() {
-        // Stop timer
-        clearInterval(gameState.timer);
+        // Stop game and timers
+        stopGame();
+
+        // Set game as inactive
+        gameState.isGameActive = false;
 
         // Stop animations
-        elements.countdownBar.style.animation = "none";
         elements.timeLeft.classList.remove(
           "text-red-500",
           "animate-pulse-fast"
@@ -887,12 +1046,20 @@
             .catch((e) => console.log("Sound could not play automatically"));
         }
 
-        // Stop background music
-        sounds.backgroundMusic.pause();
-        sounds.backgroundMusic.currentTime = 0;
-
         // Update results screen
         elements.finalScore.textContent = gameState.score;
+        elements.playerResult.textContent = `${gameState.playerName}님의 점수`;
+
+        // Add score to leaderboard
+        addScoreToLeaderboard(
+          gameState.playerName,
+          gameState.score,
+          gameState.selectedTopic,
+          gameState.timeLimit
+        );
+
+        // Update leaderboard display
+        updateLeaderboardDisplay();
 
         // Display passed words
         elements.passedWordsList.innerHTML = "";
@@ -924,6 +1091,123 @@
 
         // Show results screen
         showScreen("results");
+      }
+
+      function addScoreToLeaderboard(playerName, score, topic, timeLimit) {
+        // Create a new score entry
+        const newScore = {
+          playerName,
+          score,
+          topic,
+          timeLimit,
+          timestamp: new Date().toISOString(),
+        };
+
+        // Add to leaderboard
+        leaderboard.push(newScore);
+
+        // Sort by score (descending)
+        leaderboard.sort((a, b) => b.score - a.score);
+
+        // Limit to top 10 scores
+        if (leaderboard.length > 10) {
+          leaderboard = leaderboard.slice(0, 10);
+        }
+
+        // Save to sessionStorage
+        try {
+          sessionStorage.setItem(
+            "wordGameLeaderboard",
+            JSON.stringify(leaderboard)
+          );
+        } catch (e) {
+          console.log("Error saving leaderboard", e);
+        }
+      }
+
+      function updateLeaderboardDisplay() {
+        elements.leaderboardEl.innerHTML = "";
+
+        if (leaderboard.length === 0) {
+          const noScoresEl = document.createElement("p");
+          noScoresEl.classList.add(
+            "text-gray-500",
+            "dark:text-gray-400",
+            "italic",
+            "text-center"
+          );
+          noScoresEl.textContent = "아직 기록이 없습니다!";
+          elements.leaderboardEl.appendChild(noScoresEl);
+          return;
+        }
+
+        // Create leaderboard table
+        const table = document.createElement("table");
+        table.className = "w-full text-left";
+
+        // Create header row
+        const thead = document.createElement("thead");
+        const headerRow = document.createElement("tr");
+
+        const rankHeader = document.createElement("th");
+        rankHeader.className =
+          "text-sm text-gray-600 dark:text-gray-300 font-semibold px-2 py-1";
+        rankHeader.textContent = "순위";
+
+        const nameHeader = document.createElement("th");
+        nameHeader.className =
+          "text-sm text-gray-600 dark:text-gray-300 font-semibold px-2 py-1";
+        nameHeader.textContent = "이름";
+
+        const scoreHeader = document.createElement("th");
+        scoreHeader.className =
+          "text-sm text-gray-600 dark:text-gray-300 font-semibold px-2 py-1 text-right";
+        scoreHeader.textContent = "점수";
+
+        headerRow.appendChild(rankHeader);
+        headerRow.appendChild(nameHeader);
+        headerRow.appendChild(scoreHeader);
+        thead.appendChild(headerRow);
+        table.appendChild(thead);
+
+        // Create body
+        const tbody = document.createElement("tbody");
+
+        leaderboard.forEach((entry, index) => {
+          const row = document.createElement("tr");
+
+          // Add highlight for the current player's score
+          if (
+            entry.playerName === gameState.playerName &&
+            entry.score === gameState.score &&
+            entry.timestamp === leaderboard[index].timestamp
+          ) {
+            row.className = "bg-primary bg-opacity-10 dark:bg-opacity-20";
+          } else {
+            row.className = "border-t border-gray-200 dark:border-gray-600";
+          }
+
+          const rankCell = document.createElement("td");
+          rankCell.className = "px-2 py-1 text-sm";
+          rankCell.textContent = `${index + 1}`;
+
+          const nameCell = document.createElement("td");
+          nameCell.className = "px-2 py-1 text-sm font-medium";
+          nameCell.textContent = entry.playerName;
+
+          const scoreCell = document.createElement("td");
+          scoreCell.className = "px-2 py-1 text-sm font-bold text-right";
+          scoreCell.textContent = entry.score;
+
+          row.appendChild(rankCell);
+          row.appendChild(nameCell);
+          row.appendChild(scoreCell);
+
+          tbody.appendChild(row);
+        });
+
+        table.appendChild(tbody);
+        elements.leaderboardEl.appendChild(table);
       }
 
       // Helper Functions
