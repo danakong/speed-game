@@ -104,22 +104,6 @@
         id="app-container"
         class="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 transition-all duration-300"
       >
-        <!-- Welcome Screen -->
-        <div id="welcome-screen" class="flex flex-col items-center text-center">
-          <h1 class="text-3xl font-bold mb-4 title-gradient">
-            스피드 워드 게임
-          </h1>
-          <p class="text-gray-600 dark:text-gray-300 mb-8">
-            친구들과 함께 즐기는 빠른 단어 맞추기 게임!
-          </p>
-          <button
-            id="start-setup-btn"
-            class="bg-primary text-white font-bold py-3 px-6 rounded-full shadow-lg hover:bg-opacity-90 transition-all transform hover:scale-105"
-          >
-            시작하기
-          </button>
-        </div>
-
         <!-- Setup Screen -->
         <div id="setup-screen" class="hidden">
           <h2
@@ -675,11 +659,14 @@
 
       // DOM Elements
       const screens = {
-        welcome: document.getElementById("welcome-screen"),
         setup: document.getElementById("setup-screen"),
         game: document.getElementById("game-screen"),
         results: document.getElementById("results-screen"),
       };
+
+      document.addEventListener("DOMContentLoaded", () => {
+        showScreen("setup");
+      });
 
       const elements = {
         topicButtons: document.querySelectorAll(".topic-btn"),
@@ -711,13 +698,6 @@
         timeout: document.getElementById("timeout-sound"),
         backgroundMusic: document.getElementById("background-music-audio"),
       };
-
-      // Event Listeners
-      document
-        .getElementById("start-setup-btn")
-        .addEventListener("click", () => {
-          showScreen("setup");
-        });
 
       elements.topicButtons.forEach((button) => {
         button.addEventListener("click", () => {
